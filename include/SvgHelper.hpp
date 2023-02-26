@@ -2,8 +2,8 @@
 
 #include <regex>
 
-#include <rack.hpp>
 #include "nanosvg.h"
+#include "rack.hpp"
 
 using namespace rack;
 
@@ -26,6 +26,7 @@ std::vector<Vec> SvgHelper::findPrefixed(std::string prefix) {
     std::vector<Vec> result;
 
     NSVGimage* image;
+
     image = nsvgParseFromFile(filename.c_str(), "mm", 96);
 
     for (NSVGshape* shape = image->shapes; shape != NULL; shape = shape->next) {
