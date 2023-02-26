@@ -12,7 +12,7 @@ Then in your module's header file, add the following:
 #include "SvgHelper.hpp"
 ```
 
-Then in your module's constructor you can use it like this:
+Then in your module's widget constructor you can use it like this:
 
 ```cpp
 auto svgHelper = SvgHelper(asset::plugin(pluginInstance, "res/MyModule.svg"));
