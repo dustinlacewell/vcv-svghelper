@@ -26,7 +26,7 @@ std::vector<Vec> SvgHelper::findPrefixed(std::string prefix) {
     std::vector<Vec> result;
 
     NSVGimage* image;
-    image = nsvgParseFromFile(asset::plugin(pluginInstance, filename).c_str(), "mm", 96);
+    image = nsvgParseFromFile(filename.c_str(), "mm", 96);
 
     // Use...
     for (NSVGshape* shape = image->shapes; shape != NULL; shape = shape->next) {
@@ -48,7 +48,7 @@ std::vector<std::pair<std::vector<std::string>, Vec>> result;
 std::regex regex(pattern);
 
 NSVGimage* image;
-image = nsvgParseFromFile(asset::plugin(pluginInstance, filename).c_str(), "mm", 96);
+image = nsvgParseFromFile(filename.c_str(), "mm", 96);
 
 for (NSVGshape* shape = image->shapes; shape != NULL; shape = shape->next) {
 // match regular expression against shape->id
