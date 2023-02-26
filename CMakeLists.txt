@@ -1,3 +1,5 @@
+# compile src/*.cpp including include/*.hpp
+
 cmake_minimum_required(VERSION 3.10)
 
 project(vcv-svghelper)
@@ -11,9 +13,10 @@ include_directories(include)
 include_directories(${RACK_SDK_DIR}/include)
 include_directories(${RACK_SDK_DIR}/dep/include)
 
-## create interface library
+## compile src
+file(GLOB_RECURSE SRC_FILES src/*.cpp)
+add_library(vcv-svghelper STATIC ${SRC_FILES})
 
-add_library(vcv-svghelper INTERFACE include/SvgHelper.hpp)
 
 ## link against Rack SDK static library
 
