@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <regex>
 
 #include "nanosvg.h"
@@ -13,7 +14,7 @@ struct SvgHelper {
 
     SvgHelper(std::string filename);
 
-    Vec findNamed(std::string name);
+    std::optional<Vec> findNamed(std::string name);
     std::vector<Vec> findPrefixed(std::string prefix);
     std::vector<std::pair<std::vector<std::string>, Vec>> findMatched(std::string regex);
 

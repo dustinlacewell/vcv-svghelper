@@ -4,7 +4,9 @@
             "name": "Win32",
             "includePath": [
                 "${default}",
-                "${workspaceFolder}/../Rack-SDK/**"
+                "${workspaceFolder}/include",
+                "B:/code/Rack/Rack-SDK/include",
+                "B:/code/Rack/Rack-SDK/dep/include"
             ],
             "defines": [
                 "_DEBUG",

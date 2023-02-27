@@ -12,14 +12,16 @@ void withImage(std::string filename, std::function<void(NSVGimage*)> callback) {
     nsvgDelete(image);
 }
 
-Vec SvgHelper::findNamed(std::string name) {
-    Vec result;
+std::optional<Vec> SvgHelper::findNamed(std::string name) {
+    std::optional<Vec> result;
 
     withImage(filename, [&](NSVGimage* image) {
         for (NSVGshape* shape = image->shapes; shape != NULL; shape = shape->next) {
             if (std::string(shape->id) == name) {
                 auto bounds = shape->bounds;
-                result = Vec((bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2);
+                result = Vec();
+                result->x = (bounds[0] + bounds[2]) / 2;
+                result->y = (bounds[1] + bounds[3]) / 2;
                 return;
             }
         }
