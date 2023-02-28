@@ -1,0 +1,23 @@
+{
+  "slug": "SvgHelper",
+  "name": "SvgHelper",
+  "version": "2.2.0",
+  "license": "GPL-3.0-or-later",
+  "brand": "MyBrand",
+  "author": "Me",
+  "authorEmail": "",
+  "authorUrl": "",
+  "pluginUrl": "",
+  "manualUrl": "",
+  "sourceUrl": "",
+  "donateUrl": "",
+  "changelogUrl": "",
+  "modules": [
+    {
+      "slug": "SvgHelperModule",
+      "name": "SvgHelperModule",
+      "description": "",
+      "tags": []
+    }
+  ]
+}
