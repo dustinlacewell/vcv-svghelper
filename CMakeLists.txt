@@ -1,30 +1,10 @@
-# compile src/*.cpp including include/*.hpp
-
-cmake_minimum_required(VERSION 3.10)
-
+cmake_minimum_required(VERSION 3.16)
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
 project(vcv-svghelper)
 
-set(CMAKE_CXX_STANDARD 17)
+set(PLUGIN_NAME ${PROJECT_NAME})
+set(ADDITIONAL_PLUGIN_DISTRIBUTABLES README.md)
+include(RackSDK.cmake)
 
-set(RACK_SDK_DIR "B:/code/Rack/Rack-SDK" CACHE PATH "Path to Rack SDK")
-
-## include Rack SDK headers
-include_directories(include)
-include_directories(${RACK_SDK_DIR}/include)
-include_directories(${RACK_SDK_DIR}/dep/include)
-
-## compile src
-file(GLOB_RECURSE SRC_FILES src/*.cpp)
-add_library(vcv-svghelper STATIC ${SRC_FILES})
-
-
-## link against Rack SDK static library
-
-if (WIN32)
-	target_link_libraries(vcv-svghelper INTERFACE ${RACK_SDK_DIR}/libRack.dll.a)
-else()
-	target_link_libraries(vcv-svghelper INTERFACE ${RACK_SDK_DIR}/librack.a)
-endif()
-
-add_executable(dummy main.cpp)
-target_link_libraries(dummy vcv-svghelper)
+target_include_directories(${RACK_PLUGIN_LIB} PRIVATE include)
+target_sources(${RACK_PLUGIN_LIB} PRIVATE src/SvgHelper.cpp)
