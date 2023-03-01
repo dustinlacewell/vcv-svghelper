@@ -18,6 +18,35 @@ void SvgHelper::setPanel(const std::string& filename) {
             WARN("Cannot reload panel from %s: %s", filename.c_str(), e.what());
         }
     }
+
+    if (svg == nullptr) {
+        // Load and parse the SVG file for the first time.
+        auto panel = createPanel(filename);
+        svg = panel->svg;
+        moduleWidget->setPanel(panel);
+    } else if (svg != nullptr) {
+        // Once loaded, VCV Rack caches the panel internally.
+        // We have to force it to reload and reparse the SVG file.
+        // Attempt to create a new SVG handle before replacing the one
+        // that exists. This way, in case the file is missing or corrupt,
+        // we don't lose the existing panel, nor do we risk crashing VCV Rack.
+        // This is quite likely during iterative development, which is why
+        // this code exists in the first place!
+        NSVGimage* replacement = nsvgParseFromFile(filename.c_str(), "px", SVG_DPI);
+        if (replacement == nullptr) {
+            // Leave the existing panel in place, and log why it didn't change.
+            WARN("Cannot load/parse SVG file [%s]", filename.c_str());
+        } else {
+            // Successful reload. Destroy the old SVG and replace it with the new one.
+            if (svg->handle)
+                nsvgDelete(svg->handle);
+
+            svg->handle = replacement;
+        }
+    } else {
+        // This should never happen. If it does, there is a bug I need to fix.
+        WARN("Weird! Somehow we lost our SVG panel.");
+    }
 }
 
 void SvgHelper::forEachShape(const std::function<void(NSVGshape*)>& callback) {
