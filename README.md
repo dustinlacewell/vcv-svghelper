@@ -1,12 +1,12 @@
 # VCV Rack SvgHelper
 
-Header only library for finding the inputs and outputs in your module SVG files.
+Simple library for finding the inputs and outputs in your module's SVG file.
 
 ## Usage
 
 Either copy the SvgHelper.hpp file into your plugin folder or add it as a submodule.
 
-Then in your module's header file, add the following:
+Then in your module widget's header file, add the following:
 
 ```cpp
 #include "SvgHelper.hpp"
@@ -15,20 +15,22 @@ Then in your module's header file, add the following:
 Then in your module's widget constructor you can use it like this:
 
 ```cpp
-auto svgHelper = SvgHelper(asset::plugin(pluginInstance, "res/MyModule.svg"));
+setModule(module);
+auto panel = createPanel(asset::plugin(pluginInstance, filename));
+setPanel(panel);
+auto svgHelper = SvgHelper(panel);
 
+// find a shape with a specific name
+auto specificShape = svgHelper.findNamed("UniqueName")
+
+// find all shapes with a specific prefix
 svgHelper.forEachPrefixed("input_", [&](int i, Vec pos) {
     addInput(createInputCentered<MyPort>(mm2px(pos), module, MyModule::INPUT_1 + i));
 });
-```
 
-Alternatively, you can use regular expressions:
-
-```cpp
-auto svgHelper = SvgHelper(asset::plugin(pluginInstance, "res/MyModule.svg"));
-
-svgHelper.forEachMatching("input_(\\d+)", [&](vector<string> captures, Vec pos) {
+// find all shapes matching a regular expression
+svgHelper.forEachMatching("output_(\\d+)", [&](vector<string> captures, Vec pos) {
     int i = stoi(captures[0]);
-    addInput(createInputCentered<MyPort>(mm2px(pos), module, MyModule::INPUT_1 + i));
+    addOutput(createOutputCentered<MyPort>(mm2px(pos), module, MyModule::OUTPUT_1 + i));
 });
 ```
