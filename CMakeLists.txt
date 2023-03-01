@@ -8,4 +8,4 @@ set(ADDITIONAL_PLUGIN_DISTRIBUTABLES README.md)
 include(RackSDK.cmake)
 
 target_include_directories(${RACK_PLUGIN_LIB} PRIVATE include)
-target_sources(${RACK_PLUGIN_LIB} PRIVATE src/SvgHelper.cpp)
+target_sources(${RACK_PLUGIN_LIB} PRIVATE thunk.cpp)

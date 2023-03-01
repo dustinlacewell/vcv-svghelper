@@ -16,9 +16,8 @@ Then in your module's widget constructor you can use it like this:
 
 ```cpp
 setModule(module);
-auto panel = createPanel(asset::plugin(pluginInstance, filename));
-setPanel(panel);
-auto svgHelper = SvgHelper(panel);
+auto helper = SvgHelper(this);
+helper.setPanel(asset::plugin(pluginInstance, filename));
 
 // find a shape with a specific name
 auto specificShape = svgHelper.findNamed("UniqueName")
@@ -34,3 +33,7 @@ svgHelper.forEachMatching("output_(\\d+)", [&](vector<string> captures, Vec pos)
     addOutput(createOutputCentered<MyPort>(mm2px(pos), module, MyModule::OUTPUT_1 + i));
 });
 ```
+
+Thanks to Don Cross, you can call `SvgHelper::setPanel` multiple times to change the SVG file. 
+
+This is useful if you want to change the SVG file based on the module's settings or during development.
