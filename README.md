@@ -14,7 +14,7 @@ Then add the mixin to your ModuleWidget subclass:
 struct MyModuleWidget : ModuleWidget, SvgHelper<MyModuleWidget> {
     MyModuleWidget(MyModule* module) : SvgHelper<MyModuleWidget>(this) {
         setModule(module);
-        SvgHelper<MyModuleWidget>::setPanel(asset::plugin(pluginInstance, "res/MyModule.svg"));
+        loadPanel(asset::plugin(pluginInstance, "res/MyModule.svg"));
         
         // find a shape with a specific name
         auto lightPos = findNamed("StatusLight")
@@ -34,6 +34,6 @@ struct MyModuleWidget : ModuleWidget, SvgHelper<MyModuleWidget> {
 };
 ```
 
-Thanks to Don Cross, you can call `SvgHelper::setPanel` multiple times to change the SVG file. 
+Thanks to Don Cross, you can call `SvgHelper::loadPanel` multiple times to change the SVG file. 
 
 This is useful if you want to change the SVG file based on the module's settings or during development.

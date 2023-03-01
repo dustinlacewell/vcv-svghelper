@@ -18,7 +18,7 @@ struct SvgHelper {
         return static_cast<ModuleWidget*>(t);
     }
 
-    void setPanel(const std::string& filename) {
+    void loadPanel(const std::string& filename) {
         if (svg == nullptr) {
             auto panel = createPanel(filename);
             svg = panel->svg;
