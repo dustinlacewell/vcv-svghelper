@@ -83,6 +83,8 @@ struct SvgHelper {
             }
         });
 
+        NVGcolor color = nvgRGB(0xff, 0x00, 0x00);
+
         return result;
     }
 
