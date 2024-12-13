@@ -1,2 +1,5 @@
 build/
+dep/
+dist/
 .idea/
+plugin.dll

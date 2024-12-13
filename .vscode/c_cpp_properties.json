@@ -3,20 +3,20 @@
         {
             "name": "Win32",
             "includePath": [
-                "${default}",
-                "${workspaceFolder}/../Rack-SDK/**"
+                "${workspaceFolder}/src/**",
+                "${workspaceFolder}/include/**",
+                "${config:rack_sdk_path}/dep/include/**",
+                "${config:rack_sdk_path}/include/**"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE"
             ],
-            "windowsSdkVersion": "10.0.19041.0",
+            "windowsSdkVersion": "10.0.17763.0",
+            "compilerPath": "${config:mingw_bin_path}/g++.exe",
             "cStandard": "c17",
-            "cppStandard": "c++17",
-            "intelliSenseMode": "linux-gcc-x64",
-            "configurationProvider": "ms-vscode.makefile-tools",
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            "cppStandard": "c++17"
         }
     ],
     "version": 4
