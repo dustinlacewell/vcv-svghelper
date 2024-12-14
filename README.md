@@ -46,6 +46,8 @@ struct MyModuleWidget : ModuleWidget, SvgHelper<MyModuleWidget> {
 
 For development and debugging, you can enable hot-reloading of your panel SVG. This allows you to update your panel design without recompiling.
 
+![](https://github.com/dustinlacewell/vcv-svghelper/blob/main/demo.gif?raw=true)
+
 ```cpp
 struct MyModuleWidget : ModuleWidget, SvgHelper<MyModuleWidget> {
     MyModuleWidget(MyModule* module) {
