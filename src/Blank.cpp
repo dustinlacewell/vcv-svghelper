@@ -3,133 +3,99 @@
 
 struct BlankModule : Module {
     enum ParamId {
-        FREQ_PARAM,
-        FINE_PARAM,
+        TOGGLE_PARAM_1,
+        TOGGLE_PARAM_2,
+        TOGGLE_PARAM_3,
+        TOGGLE_PARAM_4,
+        TOGGLE_PARAM_5,
+        TOGGLE_PARAM_6,
+        TOGGLE_PARAM_7,
+        TOGGLE_PARAM_8,
         NUM_PARAMS
     };
     enum InputId {
-        VOCT_INPUT,
-        FM_INPUT, 
+        MAIN_INPUT,
         NUM_INPUTS
     };
     enum OutputId {
-        SINE_OUTPUT,
-        TRI_OUTPUT,
+        OUTPUT_1,
+        OUTPUT_2,
+        OUTPUT_3,
+        OUTPUT_4,
+        OUTPUT_5,
+        OUTPUT_6,
+        OUTPUT_7,
+        OUTPUT_8,
         NUM_OUTPUTS
     };
     enum LightId {
-        CLIP_LIGHT,
-        FREQ_LIGHT,
         NUM_LIGHTS
     };
 
-    float phase = 0.f;
-    float freq = 440.f;
-
     BlankModule() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
-        configParam(FREQ_PARAM, -54.f, 54.f, 0.f, "Frequency", " Hz", 2.f, 440.f);
-        configParam(FINE_PARAM, -1.f, 1.f, 0.f, "Fine tune", " Hz", 0, 1.f);
-        configInput(VOCT_INPUT, "1V/oct");
-        configInput(FM_INPUT, "FM");
-        configOutput(SINE_OUTPUT, "Sine");
-        configOutput(TRI_OUTPUT, "Triangle");
-        configLight(CLIP_LIGHT, "Clipping");
-        configLight(FREQ_LIGHT, "Frequency");
+        for (int i = 0; i < 8; i++) {
+            configParam(TOGGLE_PARAM_1 + i, 0.f, 1.f, 0.f, "Toggle" + std::to_string(i + 1));
+            configOutput(OUTPUT_1 + i, "Output" + std::to_string(i + 1));
+        }
+        configInput(MAIN_INPUT, "Main Input");
     }
 
     void process(const ProcessArgs& args) override {
-        // Get pitch from inputs
-        float pitch = params[FREQ_PARAM].getValue();
-        pitch += params[FINE_PARAM].getValue();
-        pitch += inputs[VOCT_INPUT].getVoltage() * 12.f;
-        pitch += inputs[FM_INPUT].getVoltage() * 5.f;
+        float input = inputs[MAIN_INPUT].getVoltage();
 
-        // Convert pitch to frequency
-        freq = 440.f * std::pow(2.f, pitch / 12.f);
-        
-        // Accumulate phase
-        phase += freq * args.sampleTime;
-        if (phase >= 1.f)
-            phase -= 1.f;
-
-        // Generate waveforms
-        float sine = std::sin(2.f * M_PI * phase);
-        float tri = 4.f * std::abs(phase - 0.5f) - 1.f;
-
-        outputs[SINE_OUTPUT].setVoltage(5.f * sine);
-        outputs[TRI_OUTPUT].setVoltage(5.f * tri);
-
-        // Set lights
-        lights[CLIP_LIGHT].setBrightness(std::abs(sine) > 0.9f);
-        lights[FREQ_LIGHT].setBrightness((freq < 1000.f || freq > 100.f) ? 1.f : 0.f);
+        for (int i = 0; i < 8; i++) {
+            bool toggleOn = params[TOGGLE_PARAM_1 + i].getValue() > 0.5f;
+            outputs[OUTPUT_1 + i].setVoltage(toggleOn ? input : 0.f);
+            // lights[TOGGLE_LIGHT_1 + i].setBrightness(toggleOn ? 1.f : 0.f);
+        }
     }
-    void load();
 };
 
 struct BlankModuleWidget : ModuleWidget, SvgHelper<BlankModuleWidget> {
     BlankModuleWidget(BlankModule* module) {
         setModule(module);
+        setDevMode(true);
         load();
     }
 
     void appendContextMenu(Menu* menu) override {
-        menu->addChild(createMenuItem("Reload panel", "", [this]() {
-            loadPanel(asset::plugin(pluginInstance, "res/Blank.svg"));
-            // load();
-        }));
+        SvgHelper::appendContextMenu(menu);
     }
     
     void load();
+
+    void step() override {
+        ModuleWidget::step();
+        SvgHelper::step();
+    }
 };
 
 void BlankModuleWidget::load() {
-        loadPanel(asset::plugin(pluginInstance, "res/Blank.svg"));
+    loadPanel(asset::plugin(pluginInstance, "res/Blank.svg"));
 
-        // Demonstrate findNamed() for single elements
-        if (auto pos = findNamed("FreqKnob")) {
-            addParam(createParamCentered<RoundBlackKnob>(pos.value(), module, BlankModule::FREQ_PARAM));
-        }
-        
-        if (auto pos = findNamed("FineKnob")) {
-            addParam(createParamCentered<RoundBlackKnob>(pos.value(), module, BlankModule::FINE_PARAM));
-        }
+    bindInput<PJ301MPort>("Input", BlankModule::MAIN_INPUT);
 
-        // Demonstrate findPrefixed() for input ports
-        forEachPrefixed("Input", [&](unsigned int i, Vec pos) {
-            switch(i) {
-                case 0: addInput(createInputCentered<PJ301MPort>(pos, module, BlankModule::VOCT_INPUT)); break;
-                case 1: addInput(createInputCentered<PJ301MPort>(pos, module, BlankModule::FM_INPUT)); break;
-            }
-        });
+    forEachPrefixed("Toggle", [this](unsigned int i, NSVGshape* shape) {
+        auto paramId = BlankModule::TOGGLE_PARAM_1 + i;
+        bindParam<CKSS>(shape, paramId);
+    });
 
-        // Demonstrate findMatched() with regex for output ports
-        forEachMatched("Output(\\d+)", [&](std::vector<std::string> captures, Vec pos) {
-            int index = std::stoi(captures[0]) - 1;
-            addOutput(createOutputCentered<PJ301MPort>(pos, module, index));
-        });
+    forEachPrefixed("Output", [this](unsigned int i, NSVGshape* shape) {
+        auto outputId = BlankModule::OUTPUT_1 + i;
+        bindOutput<PJ301MPort>(shape, outputId);
+    });
 
-        // Demonstrate direct shape access for lights
-        if (auto shape = findShape("ClipLight")) {
-            auto bounds = (*shape)->bounds;
-            Vec pos((bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2);
-            addChild(createLightCentered<SmallLight<RedLight>>(pos, module, BlankModule::CLIP_LIGHT));
-        }
+    // Add standard rack screws
 
-        // Add frequency indicator lights
-        if (auto pos = findNamed("FreqLight")) {
-            addChild(createLightCentered<SmallLight<GreenLight>>(
-                pos.value(), 
-                module, 
-                BlankModule::FREQ_LIGHT
-            ));
-        }
+    forEachPrefixed("Screw", [this](unsigned int i, NSVGshape* shape) {
+        bindChild<ThemedScrew>(shape);
+    });
 
-        // Add standard rack screws
-        addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, 0)));
-        addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-        addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-        addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+    // addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, 0)));
+    // addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
+    // addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
+    // addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 }
 
 Model* modelBlank = createModel<BlankModule, BlankModuleWidget>("blank");

@@ -1,95 +1,109 @@
 # VCV Rack SvgHelper
 
-A header-only library for VCV Rack that helps locate and interact with SVG elements in module panel designs. It provides convenient methods for finding and positioning UI elements based on SVG element IDs.
+A header-only library for VCV Rack that helps locate and interact with SVG elements in module panel designs. Position your controls by giving them IDs in your SVG file, then reference those IDs in your code.
 
-## Features
+## Quick Start
 
-- Header-only - just include the file, no linking required
-- Hot-reloading of SVG panels during development
-- Multiple ways to find SVG elements:
-  - By exact ID name
-  - By ID prefix
-  - Using regular expressions
-- Automatic center-point calculation for element positioning
-- Type-safe integration with VCV Rack's widget system
+1. Copy `SvgHelper.hpp` into your project
+2. Include it in your module widget
+3. Add SVG IDs to your panel elements
+4. Use the helper methods to position your controls
 
-## Installation
-
-Either:
-1. Copy `SvgHelper.hpp` into your plugin's include directory
-2. Add this repository as a git submodule
-
-
-The SvgHelper provides several methods to locate SVG elements. Here are examples of each approach:
-
-### Basic Setup
-```cpp
+``cpp
 struct MyModuleWidget : ModuleWidget, SvgHelper<MyModuleWidget> {
     MyModuleWidget(MyModule* module) {
         setModule(module);
         loadPanel(asset::plugin(pluginInstance, "res/MyPanel.svg"));
-        setupWidgets();
+
+        // Bind a single control by ID
+        bindParam<RoundBlackKnob>("freq-knob", MyModule::FREQ_PARAM);
+
+        // Bind multiple controls with a prefix
+        forEachPrefixed("cv-", [this](unsigned int i, NSVGshape* shape) {
+            bindInput<PJ301MPort>(shape, MyModule::CV_INPUT + i);
+        });
+
+        // Bind controls using regex pattern matching
+        forEachMatched("out-(\\d+)", [this](std::vector<std::string> captures, NSVGshape* shape) {
+            int index = std::stoi(captures[0]);
+            bindOutput<PJ301MPort>(shape, MyModule::OUTPUT + index);
+        });
+
+        // Bind panel screws
+        forEachPrefixed("screw", [this](unsigned int i, NSVGshape* shape) {
+            bindChild<ThemedScrew>(shape);
+        });
     }
 };
-```
+``
 
-### Finding Single Elements by ID
-Use `findNamed()` to locate elements with exact ID matches:
-```cpp
-// If SVG has element with id="FreqKnob"
-if (auto pos = findNamed("FreqKnob")) {
-    addParam(createParamCentered<RoundBlackKnob>(
-        pos.value(), 
-        module, 
-        MyModule::FREQ_PARAM
-    ));
-}
-```
+## Development Features
 
-### Finding Multiple Elements by Prefix
-Use `findPrefixed()` or `forEachPrefixed()` to locate elements sharing a common ID prefix:
-```cpp
-// For elements with IDs like "Input1", "Input2", etc.
-forEachPrefixed("Input", [&](unsigned int i, Vec pos) {
-    switch(i) {
-        case 0: addInput(createInputCentered<PJ301MPort>(pos, module, MyModule::INPUT1)); break;
-        case 1: addInput(createInputCentered<PJ301MPort>(pos, module, MyModule::INPUT2)); break;
-    }
-});
-```
+For development and debugging, you can enable hot-reloading of your panel SVG. This allows you to update your panel design and get instant visual feedback.
 
-### Finding Elements Using Regular Expressions
-Use `findMatched()` or `forEachMatched()` to locate elements using regex patterns:
-```cpp
-// For elements with IDs like "Output1", "Output2", etc.
-forEachMatched("Output(\\d+)", [&](std::vector<std::string> captures, Vec pos) {
-    int index = std::stoi(captures[0]) - 1;
-    addOutput(createOutputCentered<PJ301MPort>(pos, module, index));
-});
-```
-
-### Direct Shape Access
-Use `findShape()` when you need access to the raw SVG shape data:
-```cpp
-if (auto shape = findShape("ClipLight")) {
-    auto bounds = (*shape)->bounds;
-    Vec pos((bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2);
-    addChild(createLightCentered<SmallLight<RedLight>>(
-        pos, 
-        module, 
-        MyModule::CLIP_LIGHT
-    ));
-}
-```
-
-### Hot Reloading During Development
-SvgHelper supports hot-reloading of SVG panels during development:
-```cpp
-void appendContextMenu(Menu* menu) override {
-    menu->addChild(createMenuItem("Reload panel", "", [this]() {
+``cpp
+struct MyModuleWidget : ModuleWidget, SvgHelper<MyModuleWidget> {
+    MyModuleWidget(MyModule* module) {
+        setModule(module);
+#ifdef DEBUG
+        setDevMode(true);  // Enable development features
+#endif
         loadPanel(asset::plugin(pluginInstance, "res/MyPanel.svg"));
-    }));
-}
-```
+        // ...
+    }
 
-This allows you to update your panel design and see changes without restarting VCV Rack.
+    void appendContextMenu(Menu* menu) override {
+        SvgHelper::appendContextMenu(menu);  // Adds reload options
+    }
+
+    void step() override {
+        ModuleWidget::step();
+        SvgHelper::step();  // Enables panel polling
+    }
+};
+``
+
+## API Reference
+
+### Panel Management
+- `loadPanel(string filename)` - Load or reload an SVG panel
+- `setDevMode(bool enabled)` - Enable development features
+- `setDirty()` - Force panel redraw
+
+### Finding SVG Elements
+- `findNamed(string id)` - Find element by exact ID match
+- `findPrefixed(string prefix)` - Find all elements with prefix
+- `findMatched(string pattern)` - Find elements matching regex pattern
+- `forEachShape(callback)` - Iterate over all SVG shapes
+- `forEachPrefixed(string prefix, callback)` - Iterate over prefixed elements
+- `forEachMatched(string pattern, callback)` - Iterate over matching elements
+
+### Controls
+- `bindParam<TWidget>(string id, int paramId)` - Bind parameter by SVG ID
+- `bindParam<TWidget>(NSVGshape* shape, int paramId)` - Bind parameter using shape
+- `bindInput<TWidget>(string id, int inputId)` - Bind input by SVG ID
+- `bindInput<TWidget>(NSVGshape* shape, int inputId)` - Bind input using shape
+- `bindOutput<TWidget>(string id, int outputId)` - Bind output by SVG ID
+- `bindOutput<TWidget>(NSVGshape* shape, int outputId)` - Bind output using shape
+- `bindLight<TWidget>(string id, int lightId)` - Bind light by SVG ID
+- `bindLight<TWidget>(NSVGshape* shape, int lightId)` - Bind light using shape
+- `bindChild<TWidget>(string id)` - Bind generic widget by SVG ID
+- `bindChild<TWidget>(NSVGshape* shape)` - Bind generic widget using shape
+
+### Utility Methods
+- `calculateCenter(NSVGshape* shape)` - Get center point of SVG shape
+
+## SVG Requirements
+
+Your SVG elements must have IDs that match your code:
+
+``svg
+<circle id="freq-knob" cx="30" cy="40" r="15"/>
+<rect id="cv-1" x="10" y="70" width="10" height="10"/>
+<rect id="cv-2" x="10" y="90" width="10" height="10"/>
+<rect id="out-1" x="50" y="70" width="10" height="10"/>
+<circle id="screw-1" cx="7.5" cy="7.5" r="4"/>
+<circle id="screw-2" cx="7.5" cy="380" r="4"/>
+<circle id="screw-3" cx="22.5" cy="7.5" r="4"/>
+<circle id="screw-4" cx="22.5" cy="380" r="4"/>
+``

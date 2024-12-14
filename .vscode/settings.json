@@ -1,7 +1,7 @@
 {
-    "rack_sdk_path": "<where is rack sdk?>",
-    "msys_bin_path": "<msys2/usr/bin>",
-    "mingw_bin_path": "<msys2/mingw64/bin>",
+    "rack_sdk_path": "D:/ext/vcv/Rack",
+    "msys_bin_path": "B:/installs/msys2/usr/bin/",
+    "mingw_bin_path": "B:/installs/msys2/mingw64/bin",
     "cmake.generator": "MinGW Makefiles",
     "files.associations": {
         "array": "cpp",
@@ -70,6 +70,7 @@
         "typeinfo": "cpp",
         "variant": "cpp",
         "bitset": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "xstring": "cpp"
     }
 }
