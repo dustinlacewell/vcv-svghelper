@@ -107,3 +107,7 @@ Your SVG elements must have IDs that match your code:
 <circle id="screw-3" cx="22.5" cy="7.5" r="4"/>
 <circle id="screw-4" cx="22.5" cy="380" r="4"/>
 ```
+
+-----
+
+Special thanks to cosinekitty (Don Cross) for helping with this.
