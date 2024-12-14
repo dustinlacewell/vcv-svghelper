@@ -9,7 +9,7 @@ A header-only library for VCV Rack that helps locate and interact with SVG eleme
 3. Add SVG IDs to your panel elements
 4. Use the helper methods to position your controls
 
-``cpp
+```cpp
 struct MyModuleWidget : ModuleWidget, SvgHelper<MyModuleWidget> {
     MyModuleWidget(MyModule* module) {
         setModule(module);
@@ -35,13 +35,13 @@ struct MyModuleWidget : ModuleWidget, SvgHelper<MyModuleWidget> {
         });
     }
 };
-``
+```
 
 ## Development Features
 
 For development and debugging, you can enable hot-reloading of your panel SVG. This allows you to update your panel design and get instant visual feedback.
 
-``cpp
+```cpp
 struct MyModuleWidget : ModuleWidget, SvgHelper<MyModuleWidget> {
     MyModuleWidget(MyModule* module) {
         setModule(module);
@@ -61,7 +61,7 @@ struct MyModuleWidget : ModuleWidget, SvgHelper<MyModuleWidget> {
         SvgHelper::step();  // Enables panel polling
     }
 };
-``
+```
 
 ## API Reference
 
@@ -97,7 +97,7 @@ struct MyModuleWidget : ModuleWidget, SvgHelper<MyModuleWidget> {
 
 Your SVG elements must have IDs that match your code:
 
-``svg
+```svg
 <circle id="freq-knob" cx="30" cy="40" r="15"/>
 <rect id="cv-1" x="10" y="70" width="10" height="10"/>
 <rect id="cv-2" x="10" y="90" width="10" height="10"/>
@@ -106,4 +106,4 @@ Your SVG elements must have IDs that match your code:
 <circle id="screw-2" cx="7.5" cy="380" r="4"/>
 <circle id="screw-3" cx="22.5" cy="7.5" r="4"/>
 <circle id="screw-4" cx="22.5" cy="380" r="4"/>
-``
+```
