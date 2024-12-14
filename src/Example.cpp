@@ -1,7 +1,7 @@
 #include "plugin.hpp"
 #include "SvgHelper.hpp"
 
-struct BlankModule : Module {
+struct ExampleModule : Module {
     enum ParamId {
         TOGGLE_PARAM_1,
         TOGGLE_PARAM_2,
@@ -32,7 +32,7 @@ struct BlankModule : Module {
         NUM_LIGHTS
     };
 
-    BlankModule() {
+    ExampleModule() {
         config(NUM_PARAMS, NUM_INPUTS, NUM_OUTPUTS, NUM_LIGHTS);
         for (int i = 0; i < 8; i++) {
             configParam(TOGGLE_PARAM_1 + i, 0.f, 1.f, 0.f, "Toggle" + std::to_string(i + 1));
@@ -52,8 +52,8 @@ struct BlankModule : Module {
     }
 };
 
-struct BlankModuleWidget : ModuleWidget, SvgHelper<BlankModuleWidget> {
-    BlankModuleWidget(BlankModule* module) {
+struct ExampleModuleWidget : ModuleWidget, SvgHelper<ExampleModuleWidget> {
+    ExampleModuleWidget(ExampleModule* module) {
         setModule(module);
         setDevMode(true);
         load();
@@ -71,31 +71,27 @@ struct BlankModuleWidget : ModuleWidget, SvgHelper<BlankModuleWidget> {
     }
 };
 
-void BlankModuleWidget::load() {
-    loadPanel(asset::plugin(pluginInstance, "res/Blank.svg"));
+void ExampleModuleWidget::load() {
+    loadPanel(
+        asset::plugin(pluginInstance, "res/light.svg"),
+        asset::plugin(pluginInstance, "res/dark.svg")
+    );
 
-    bindInput<PJ301MPort>("Input", BlankModule::MAIN_INPUT);
+    bindInput<PJ301MPort>("Input", ExampleModule::MAIN_INPUT);
 
     forEachPrefixed("Toggle", [this](unsigned int i, NSVGshape* shape) {
-        auto paramId = BlankModule::TOGGLE_PARAM_1 + i;
+        auto paramId = ExampleModule::TOGGLE_PARAM_1 + i;
         bindParam<CKSS>(shape, paramId);
     });
 
     forEachPrefixed("Output", [this](unsigned int i, NSVGshape* shape) {
-        auto outputId = BlankModule::OUTPUT_1 + i;
+        auto outputId = ExampleModule::OUTPUT_1 + i;
         bindOutput<PJ301MPort>(shape, outputId);
     });
-
-    // Add standard rack screws
 
     forEachPrefixed("Screw", [this](unsigned int i, NSVGshape* shape) {
         bindChild<ThemedScrew>(shape);
     });
-
-    // addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, 0)));
-    // addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, 0)));
-    // addChild(createWidget<ThemedScrew>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
-    // addChild(createWidget<ThemedScrew>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 }
 
-Model* modelBlank = createModel<BlankModule, BlankModuleWidget>("blank");
+Model* modelExample = createModel<ExampleModule, ExampleModuleWidget>("example");

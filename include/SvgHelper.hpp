@@ -5,6 +5,7 @@
 #include <map>
 #include <regex>
 
+#include "app/SvgPanel.hpp"
 #include "nanosvg.h"
 #include "rack.hpp"
 
@@ -12,13 +13,13 @@ using namespace rack;
 
 template <typename T>
 struct SvgHelper {
-
    private:
     bool devMode = false;
     bool pollMode = false;
     double prevPollTime = 0.0;
     struct stat prevStatBuf;
-    std::string svgFileName;
+    std::string lightSvgFileName;
+    std::string darkSvgFileName;
 
     app::SvgPanel* panel = nullptr;
     std::map<std::string, Widget*> widgets;
@@ -69,87 +70,69 @@ struct SvgHelper {
         if (!devMode)
             return;
 
-        if (panel == nullptr || svgFileName.empty()) {
+        if (panel == nullptr || lightSvgFileName.empty()) {
             return;
         }
 
         menu->addChild(new MenuSeparator);
-        menu->addChild(createMenuItem("Reload panel", "", [this]() { loadPanel(this->svgFileName); }));
-        menu->addChild(createBoolPtrMenuItem<bool>("Poll SVG for reload", "", &pollMode));
+        menu->addChild(createMenuItem("Reload panel", "", [this]() { reloadPanel(); }));
+        menu->addChild(createBoolPtrMenuItem("Poll SVG for reload", "", &pollMode));
     }
 
+    // Original method for backwards compatibility
     void loadPanel(const std::string& filename) {
+        lightSvgFileName = filename;
+        darkSvgFileName = "";
+
         if (panel == nullptr) {
             DEBUG("Loading SVG file [%s]", filename.c_str());
-            // Load and parse the SVG file for the first time.
-            svgFileName = filename;
             panel = createPanel(filename);
             widget()->setPanel(panel);
         } else {
-            DEBUG("Reloading SVG file [%s]", filename.c_str());
-            NSVGimage* replacement = nsvgParseFromFile(filename.c_str(), "px", SVG_DPI);
-
-            if (replacement == nullptr) {
-                // Leave the existing panel in place, and log why it didn't change.
-                WARN("Cannot load/parse SVG file [%s]", filename.c_str());
-            } else {
-                svgFileName = filename;
-
-                // Successful reload. Destroy the old SVG and replace it with the new one.
-                if (panel->svg->handle) {
-                    DEBUG("Deleting old SVG handle");
-                    nsvgDelete(panel->svg->handle);
-                }
-
-                DEBUG("Replacing SVG handle");
-                panel->svg->handle = replacement;
-                setDirty();
-            }
-
-            if (panel && panel->svg && panel->svg->handle) {
-                // Find shapes whose SVG identifier matches one of our control names.
-                // Use coordinates from the SVG object to set the position of the matching control.
-                forEachShape([&](NSVGshape* shape) {
-                    auto search = widgets.find(shape->id);
-                    if (search != widgets.end())
-                        reposition(search->second, shape);
-                });
-
-                setDirty();
-            }
+            reloadPanel();
         }
     }
 
+    // New method supporting dark mode
+    void loadPanel(const std::string& lightFilename, const std::string& darkFilename) {
+        lightSvgFileName = lightFilename;
+        darkSvgFileName = darkFilename;
+
+        if (panel == nullptr) {
+            DEBUG("Loading SVG files - Light: [%s], Dark: [%s]", lightFilename.c_str(), darkFilename.c_str());
+            panel = createPanel(lightFilename, darkFilename);
+            widget()->setPanel(panel);
+        } else {
+            reloadPanel();
+        }
+    }
     void forEachShape(const std::function<void(NSVGshape*)>& callback) {
+        if (!panel || !panel->svg || !panel->svg->handle)
+            return;
         auto shapes = panel->svg->handle->shapes;
         for (NSVGshape* shape = shapes; shape != nullptr; shape = shape->next) {
             callback(shape);
         }
     }
 
-    // return the actual shape
     NSVGshape* findNamed(std::string name) {
         NSVGshape* result = nullptr;
-
         forEachShape([&](NSVGshape* shape) {
             if (std::string(shape->id) == name) {
                 result = shape;
                 return;
             }
         });
-
         return result;
     }
 
     std::vector<NSVGshape*> findPrefixed(std::string prefix) {
         std::vector<NSVGshape*> result;
-
         forEachShape([&](NSVGshape* shape) {
             if (std::string(shape->id).find(prefix) == 0) {
                 result.push_back(shape);
             }
         });
-
         return result;
     }
 
@@ -159,7 +142,6 @@ struct SvgHelper {
 
         forEachShape([&](NSVGshape* shape) {
             auto id = std::string(shape->id);
-
             std::vector<std::string> captures;
             std::smatch match;
 
@@ -189,7 +171,6 @@ struct SvgHelper {
         }
     }
 
-    // reload support
     void reposition(Widget* widget, NSVGshape* shape) {
         float x = (shape->bounds[0] + shape->bounds[2]) / 2;
         float y = (shape->bounds[1] + shape->bounds[3]) / 2;
@@ -262,24 +243,83 @@ struct SvgHelper {
     }
 
     void step() {
-        if (pollMode && !svgFileName.empty()) {
-            // Check the SVG file's last-modification-time once per second.
+        if (pollMode && !lightSvgFileName.empty()) {
             double now = system::getTime();
             double elapsed = now - prevPollTime;
             if (elapsed >= 1.0) {
                 prevPollTime = now;
                 struct stat statBuf;
-                if (0 == stat(svgFileName.c_str(), &statBuf)) {
-                    // Has the SVG file's modification time changed?
-                    // For maximum source portability, check the POSIX-required seconds field only.
-                    // We aren't polling more than once per second, and realistically,
-                    // the SVG file isn't changing more than once per second either.
+                bool needsReload = false;
+
+                if (0 == stat(lightSvgFileName.c_str(), &statBuf)) {
                     if (0 != memcmp(&statBuf.st_mtime, &prevStatBuf.st_mtime, sizeof(statBuf.st_mtime))) {
-                        prevStatBuf = statBuf;
-                        loadPanel(svgFileName);
+                        needsReload = true;
                     }
+                }
+
+                if (!darkSvgFileName.empty()) {
+                    if (0 == stat(darkSvgFileName.c_str(), &statBuf)) {
+                        if (0 != memcmp(&statBuf.st_mtime, &prevStatBuf.st_mtime, sizeof(statBuf.st_mtime))) {
+                            needsReload = true;
+                        }
+                    }
+                }
+
+                if (needsReload) {
+                    prevStatBuf = statBuf;
+                    reloadPanel();
                 }
             }
         }
+    }
+
+   private:
+    void reloadPanel() {
+        DEBUG("Reloading SVG files");
+
+        if (darkSvgFileName.empty()) {
+            // Single panel mode
+            NSVGimage* replacement = nsvgParseFromFile(lightSvgFileName.c_str(), "px", SVG_DPI);
+            if (replacement) {
+                if (panel->svg->handle) {
+                    nsvgDelete(panel->svg->handle);
+                }
+                panel->svg->handle = replacement;
+            } else {
+                WARN("Cannot load/parse SVG file [%s]", lightSvgFileName.c_str());
+                return;
+            }
+        } else {
+            // Themed panel mode
+            auto* themedPanel = dynamic_cast<app::ThemedSvgPanel*>(panel);
+            if (!themedPanel)
+                return;
+
+            NSVGimage* lightReplacement = nsvgParseFromFile(lightSvgFileName.c_str(), "px", SVG_DPI);
+            NSVGimage* darkReplacement = nsvgParseFromFile(darkSvgFileName.c_str(), "px", SVG_DPI);
+
+            if (lightReplacement) {
+                if (themedPanel->lightSvg->handle) {
+                    nsvgDelete(themedPanel->lightSvg->handle);
+                }
+                themedPanel->lightSvg->handle = lightReplacement;
+            }
+
+            if (darkReplacement) {
+                if (themedPanel->darkSvg->handle) {
+                    nsvgDelete(themedPanel->darkSvg->handle);
+                }
+                themedPanel->darkSvg->handle = darkReplacement;
+            }
+        }
+
+        // Update widget positions using light SVG as reference
+        forEachShape([&](NSVGshape* shape) {
+            auto search = widgets.find(shape->id);
+            if (search != widgets.end())
+                reposition(search->second, shape);
+        });
+
+        setDirty();
     }
 };
